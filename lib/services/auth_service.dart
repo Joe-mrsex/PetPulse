@@ -56,6 +56,19 @@ class AuthService {
 
   Future<void> signOut() => _auth.signOut();
 
+  /// Elimina la cuenta de forma permanente. Firebase exige un login
+  /// "reciente" para esta operación sensible, así que primero se vuelve a
+  /// autenticar con la contraseña actual antes de borrar al usuario.
+  Future<void> reauthenticateAndDeleteAccount(String password) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) {
+      throw Exception('No hay una sesión activa.');
+    }
+    final credential = EmailAuthProvider.credential(email: user.email!, password: password);
+    await user.reauthenticateWithCredential(credential);
+    await user.delete();
+  }
+
   String friendlyError(Object error) {
     if (error is FirebaseAuthException) {
       switch (error.code) {

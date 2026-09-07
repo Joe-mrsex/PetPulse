@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../services/auth_service.dart';
+import '../../services/firestore_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/shared_widgets.dart';
 
 class ShelterProfileScreen extends StatelessWidget {
   final UserProfile profile;
@@ -63,6 +65,14 @@ class ShelterProfileScreen extends StatelessWidget {
                 icon: const Icon(Icons.logout_rounded, size: 18, color: AppColors.danger),
                 label: const Text('Cerrar sesión', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
                 style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.danger), padding: const EdgeInsets.symmetric(vertical: 14)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Center(
+              child: DeleteAccountButton(
+                onDeleteData: () => FirestoreService().deleteAllAccountData(profile.uid, profile.role),
+                onReauthenticateAndDelete: (password) => auth.reauthenticateAndDeleteAccount(password),
+                errorMapper: (e) => auth.friendlyError(e),
               ),
             ),
           ],

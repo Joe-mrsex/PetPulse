@@ -18,7 +18,10 @@ class ApplicantsScreen extends StatefulWidget {
 
 class _ApplicantsScreenState extends State<ApplicantsScreen> {
   final _firestore = FirestoreService();
-  MatchStatus? _filter;
+  // Por defecto solo se muestran las pendientes: en cuanto se aceptan o
+  // rechazan, desaparecen de esta vista principal y pasan al Historial,
+  // así el refugio siempre ve una bandeja limpia de "por decidir".
+  bool _showHistory = false;
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +38,10 @@ class _ApplicantsScreenState extends State<ApplicantsScreen> {
         stream: _firestore.watchMatchesForShelter(widget.profile.uid),
         builder: (context, snapshot) {
           final all = snapshot.data ?? [];
-          final pending = all.where((m) => m.status == MatchStatus.pending).length;
+          final pending = all.where((m) => m.status == MatchStatus.pending).toList();
+          final history = all.where((m) => m.status != MatchStatus.pending).toList();
           final accepted = all.where((m) => m.status == MatchStatus.accepted).length;
-          final filtered = _filter == null ? all : all.where((m) => m.status == _filter).toList();
+          final filtered = _showHistory ? history : pending;
 
           return Column(
             children: [
@@ -47,7 +51,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen> {
                   children: [
                     _StatChip(label: 'Total', value: '${all.length}', color: AppColors.shelterAccent),
                     const SizedBox(width: 10),
-                    _StatChip(label: 'Pendientes', value: '$pending', color: AppColors.warning),
+                    _StatChip(label: 'Pendientes', value: '${pending.length}', color: AppColors.warning),
                     const SizedBox(width: 10),
                     _StatChip(label: 'Aceptadas', value: '$accepted', color: AppColors.info),
                   ],
@@ -55,26 +59,23 @@ class _ApplicantsScreenState extends State<ApplicantsScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _FilterChip(label: 'Todas', selected: _filter == null, onTap: () => setState(() => _filter = null)),
-                      const SizedBox(width: 8),
-                      _FilterChip(label: 'Pendientes', selected: _filter == MatchStatus.pending, onTap: () => setState(() => _filter = MatchStatus.pending)),
-                      const SizedBox(width: 8),
-                      _FilterChip(label: 'Aceptadas', selected: _filter == MatchStatus.accepted, onTap: () => setState(() => _filter = MatchStatus.accepted)),
-                      const SizedBox(width: 8),
-                      _FilterChip(label: 'Rechazadas', selected: _filter == MatchStatus.rejected, onTap: () => setState(() => _filter = MatchStatus.rejected)),
-                    ],
-                  ),
+                child: Row(
+                  children: [
+                    _FilterChip(label: 'Pendientes', selected: !_showHistory, onTap: () => setState(() => _showHistory = false)),
+                    const SizedBox(width: 8),
+                    _FilterChip(label: 'Historial', selected: _showHistory, onTap: () => setState(() => _showHistory = true)),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),
               Expanded(
                 child: filtered.isEmpty
-                    ? const Center(
-                        child: Text('No hay solicitudes en esta categoría', style: TextStyle(color: AppColors.shelterTextMuted)),
+                    ? Center(
+                        child: Text(
+                          _showHistory ? 'Aún no hay solicitudes decididas' : 'No tienes solicitudes pendientes por revisar',
+                          style: const TextStyle(color: AppColors.shelterTextMuted),
+                          textAlign: TextAlign.center,
+                        ),
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),

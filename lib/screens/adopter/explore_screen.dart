@@ -53,18 +53,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
             style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w800, fontSize: 24)),
       ),
       body: SafeArea(
-        child: StreamBuilder<List<Pet>>(
-          stream: _firestore.watchAvailablePets(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-            }
-            final pets = snapshot.data ?? [];
-            if (pets.isEmpty) {
-              return const _EmptyExplore();
-            }
-            if (_currentIndex >= pets.length) _currentIndex = 0;
-            final pet = pets[_currentIndex];
+        child: StreamBuilder<List<AdoptionMatch>>(
+          // Primero se obtienen las solicitudes que ya envió este adoptante,
+          // para poder ocultar del feed las mascotas que ya pidió (evita
+          // que pueda "espamear" solicitudes repetidas a la misma mascota).
+          stream: _firestore.watchMatchesForAdopter(widget.profile.uid),
+          builder: (context, matchesSnapshot) {
+            final requestedPetIds = (matchesSnapshot.data ?? []).map((m) => m.petId).toSet();
+
+            return StreamBuilder<List<Pet>>(
+              stream: _firestore.watchAvailablePets(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                }
+                final pets = (snapshot.data ?? []).where((p) => !requestedPetIds.contains(p.id)).toList();
+                if (pets.isEmpty) {
+                  return const _EmptyExplore();
+                }
+                if (_currentIndex >= pets.length) _currentIndex = 0;
+                final pet = pets[_currentIndex];
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -105,6 +113,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   const SizedBox(height: 12),
                 ],
               ),
+            );
+              },
             );
           },
         ),

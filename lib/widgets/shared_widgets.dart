@@ -345,3 +345,95 @@ class LoadingButton extends StatelessWidget {
     );
   }
 }
+
+/// Botón + flujo completo para eliminar la cuenta de forma permanente.
+/// Primero advierte que es irreversible, luego pide la contraseña actual
+/// (Firebase exige reautenticación para esta operación sensible) y borra
+/// todos los datos del usuario antes de eliminar la cuenta de Auth.
+class DeleteAccountButton extends StatefulWidget {
+  final Future<void> Function() onDeleteData;
+  final Future<void> Function(String password) onReauthenticateAndDelete;
+  final String Function(Object error) errorMapper;
+
+  const DeleteAccountButton({
+    super.key,
+    required this.onDeleteData,
+    required this.onReauthenticateAndDelete,
+    required this.errorMapper,
+  });
+
+  @override
+  State<DeleteAccountButton> createState() => _DeleteAccountButtonState();
+}
+
+class _DeleteAccountButtonState extends State<DeleteAccountButton> {
+  bool _loading = false;
+
+  Future<void> _startFlow() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar cuenta'),
+        content: const Text(
+          'Esta acción es permanente: se borrará tu perfil, tus publicaciones (si eres refugio) y no podrás recuperar tu cuenta. ¿Deseas continuar?',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Sí, eliminar', style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final passwordCtrl = TextEditingController();
+    final password = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirma tu contraseña'),
+        content: TextField(
+          controller: passwordCtrl,
+          obscureText: true,
+          decoration: const InputDecoration(hintText: 'Contraseña actual'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(passwordCtrl.text),
+            child: const Text('Confirmar', style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (password == null || password.isEmpty || !mounted) return;
+
+    setState(() => _loading = true);
+    try {
+      // Se borran los datos en Firestore ANTES de eliminar la cuenta de
+      // Auth, porque las reglas de seguridad exigen estar autenticado.
+      await widget.onDeleteData();
+      await widget.onReauthenticateAndDelete(password);
+      // Tras eliminar la cuenta, el AuthGate detecta la sesión cerrada y
+      // regresa solo al login: no hace falta navegar manualmente.
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(widget.errorMapper(e))));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: _loading ? null : _startFlow,
+      icon: _loading
+          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.danger))
+          : const Icon(Icons.delete_forever_rounded, size: 18, color: AppColors.danger),
+      label: const Text('Eliminar cuenta permanentemente', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+    );
+  }
+}

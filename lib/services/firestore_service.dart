@@ -38,6 +38,23 @@ class FirestoreService {
     });
   }
 
+  Future<void> deleteUserProfile(String uid) {
+    return _users.doc(uid).delete();
+  }
+
+  /// Borra todos los datos del usuario antes de eliminar su cuenta de
+  /// Auth: si es refugio, elimina también sus mascotas publicadas (lo que
+  /// de paso cierra cualquier solicitud pendiente sobre ellas).
+  Future<void> deleteAllAccountData(String uid, UserRole role) async {
+    if (role == UserRole.shelter) {
+      final pets = await _pets.where('shelterId', isEqualTo: uid).get();
+      for (final doc in pets.docs) {
+        await deletePet(doc.id);
+      }
+    }
+    await deleteUserProfile(uid);
+  }
+
   // ---------------------------------------------------------------------
   // MASCOTAS
   // ---------------------------------------------------------------------
@@ -68,8 +85,21 @@ class FirestoreService {
     return _pets.doc(petId).update(data);
   }
 
-  Future<void> deletePet(String petId) {
-    return _pets.doc(petId).delete();
+  /// Elimina la publicación y, de paso, cierra (rechaza) cualquier
+  /// solicitud pendiente que apuntara a ella — así no quedan solicitudes
+  /// "huérfanas" esperando una mascota que ya no existe.
+  Future<void> deletePet(String petId) async {
+    final batch = _db.batch();
+    batch.delete(_pets.doc(petId));
+
+    final pending = await _matches
+        .where('petId', isEqualTo: petId)
+        .where('status', isEqualTo: MatchStatus.pending.value)
+        .get();
+    for (final doc in pending.docs) {
+      batch.update(doc.reference, {'status': MatchStatus.rejected.value});
+    }
+    await batch.commit();
   }
 
   // ---------------------------------------------------------------------

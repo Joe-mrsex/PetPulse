@@ -271,22 +271,60 @@ class _PublishPetScreenState extends State<PublishPetScreen> {
       );
 
   Widget _lightField(TextEditingController ctrl, String label, IconData icon, {int maxLines = 1, String? Function(String?)? validator}) {
-    return TextFormField(
-      controller: ctrl,
-      maxLines: maxLines,
-      style: const TextStyle(color: AppColors.textDark),
-      decoration: fieldDecoration(label, icon),
-      validator: validator,
+    // Se usa una etiqueta fija arriba (en vez de labelText flotante) para
+    // evitar que el texto de la etiqueta quede superpuesto con el borde
+    // del campo cuando ya trae un valor precargado (pantalla de editar).
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          child: Text(label, style: const TextStyle(color: AppColors.shelterTextMuted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+        ),
+        TextFormField(
+          controller: ctrl,
+          maxLines: maxLines,
+          style: const TextStyle(color: AppColors.textDark),
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: AppColors.textLight, size: 20),
+            filled: true,
+            fillColor: AppColors.card,
+            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary, width: 1.6)),
+            errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.danger)),
+          ),
+          validator: validator,
+        ),
+      ],
     );
   }
 
   Widget _lightDropdown() {
-    return DropdownButtonFormField<String>(
-      initialValue: _species,
-      decoration: fieldDecoration('Especie', Icons.pets_rounded),
-      items: _speciesOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-      onChanged: (v) => setState(() => _species = v),
-      validator: (v) => v == null ? 'Selecciona una especie' : null,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 6),
+          child: Text('Especie', style: TextStyle(color: AppColors.shelterTextMuted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+        ),
+        DropdownButtonFormField<String>(
+          initialValue: _species,
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.pets_rounded, color: AppColors.textLight, size: 20),
+            filled: true,
+            fillColor: AppColors.card,
+            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary, width: 1.6)),
+          ),
+          items: _speciesOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+          onChanged: (v) => setState(() => _species = v),
+          validator: (v) => v == null ? 'Selecciona una especie' : null,
+        ),
+      ],
     );
   }
 }

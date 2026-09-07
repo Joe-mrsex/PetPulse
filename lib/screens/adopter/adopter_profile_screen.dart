@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../services/auth_service.dart';
+import '../../services/firestore_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/shared_widgets.dart';
 
 class AdopterProfileScreen extends StatelessWidget {
   final UserProfile profile;
@@ -72,6 +74,14 @@ class AdopterProfileScreen extends StatelessWidget {
                 onPressed: () => auth.signOut(),
                 icon: const Icon(Icons.logout_rounded, size: 20, color: AppColors.danger),
                 label: const Text('Cerrar sesión', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.danger)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: DeleteAccountButton(
+                onDeleteData: () => FirestoreService().deleteAllAccountData(profile.uid, profile.role),
+                onReauthenticateAndDelete: (password) => auth.reauthenticateAndDeleteAccount(password),
+                errorMapper: (e) => auth.friendlyError(e),
               ),
             ),
           ],
