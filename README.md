@@ -122,10 +122,6 @@ de entrada y confirma el enlace → completa tu perfil (foto obligatoria,
 ubicación en el mapa) → explora o publica una mascota → envía/recibe una
 solicitud → chatea en tiempo real.
 
-## 6. Publicar en las tiendas (cuando estés listo)
-
-- Android: `flutter build appbundle` y sube el `.aab` a Google Play Console (cuenta de desarrollador, 25 USD una vez).
-- iOS: necesitas una cuenta de Apple Developer (99 USD/año) y compilar desde Xcode en una Mac (`flutter build ipa`).
 
 ## Estructura del proyecto
 
