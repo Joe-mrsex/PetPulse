@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "838923562222",
+    "project_id": "petpulse-d414c",
+    "storage_bucket": "petpulse-d414c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:838923562222:android:5f523052dda551037bd7ff",
+        "android_client_info": {
+          "package_name": "com.tuempresa.petpulse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcL9dkfv1LG3ci23Xrs_Ve5NOB2QpWims"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
